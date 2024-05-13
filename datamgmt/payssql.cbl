@@ -1,7 +1,6 @@
-      ****************************************************************** 
        IDENTIFICATION DIVISION.
        PROGRAM-ID. payssql.
-       AUTHOR. AlexEnCde.
+       AUTHOR. AlexEnCode.
 
       ****************************************************************** 
        ENVIRONMENT DIVISION.
@@ -24,7 +23,7 @@
 
        FD RAPPORT
            LABEL RECORDS ARE STANDARD
-           RECORDING MODE IS V.    
+           RECORDING MODE IS F.    
 
        01  RAPPORT-ENTRY     PIC X(125).
       ******************************************************************
@@ -49,9 +48,9 @@
       *             VARIABLE ALGO             *
       ***************************************** 
 
-       01  WS-COUNTRY        PIC X(02) VALUE SPACE.
-       01  WS-CODE           PIC X(02) VALUE SPACE.
-       01  WS-COUNTRY-CODE   PIC X(02) VALUE SPACE.
+       01  WS-COUNTRY        PIC X(50) VALUE SPACE.
+       01  WS-CODE           PIC X(50) VALUE SPACE.
+       01  WS-COUNTRY-CODE   PIC X(50) VALUE SPACE.
 
       *****************************************
       *              VARIABLE SQL             *
@@ -84,9 +83,7 @@
 
       ******************************************************************
            EXEC SQL
-               CONNECT :USERNAME 
-               IDENTIFIED BY :PASSWD 
-               USING :DBNAME 
+               CONNECT :USERNAME IDENTIFIED BY :PASSWD USING :DBNAME 
            END-EXEC.
 
            IF  SQLCODE NOT = ZERO 
@@ -104,10 +101,13 @@
            CLOSE RAPPORT.
            OPEN EXTEND RAPPORT.
 
+           INITIALIZE RAPPORT-ENTRY.
            MOVE PT-ETOILE   TO RAPPORT-ENTRY
            WRITE RAPPORT-ENTRY.
+           INITIALIZE RAPPORT-ENTRY.           
            MOVE PT-ENTETE   TO RAPPORT-ENTRY
            WRITE RAPPORT-ENTRY.
+           INITIALIZE RAPPORT-ENTRY.           
            MOVE PT-ETOILE   TO RAPPORT-ENTRY
            WRITE RAPPORT-ENTRY.     
 
@@ -117,6 +117,9 @@
 
            CLOSE RAPPORT.
 
+           EXEC SQL COMMIT WORK END-EXEC.
+           EXEC SQL DISCONNECT ALL END-EXEC.
+           
        0000-MAIN-END.
            STOP RUN.
 
@@ -126,11 +129,13 @@
       *****************************************
       *     MAJ CODE PAYS FR VERS BE          *
       *****************************************    
-
+           INITIALIZE RAPPORT-ENTRY.
            MOVE PT-ETOILE TO RAPPORT-ENTRY
            WRITE RAPPORT-ENTRY.
+           INITIALIZE RAPPORT-ENTRY.           
            MOVE PT-CODE  TO RAPPORT-ENTRY
            WRITE RAPPORT-ENTRY.
+           INITIALIZE RAPPORT-ENTRY.           
            MOVE PT-ETOILE TO RAPPORT-ENTRY
            WRITE RAPPORT-ENTRY.
 
@@ -143,6 +148,7 @@
 
     
            IF SQLCODE = 0 THEN
+               INITIALIZE RAPPORT-ENTRY           
                MOVE 'La mise à jour à correctement été effectuée.'
                TO RAPPORT-ENTRY
                WRITE RAPPORT-ENTRY
@@ -151,7 +157,7 @@
            DISPLAY "part1 ok".
 
        7010-CODE-END.
-           EXIT.
+
 
       ****************************************************************** 
        7020-INCOHERENCE-START.   
@@ -160,63 +166,71 @@
       *     INCOHERENCE PAYS / CODE PAYS      *
       *****************************************    
 
+           INITIALIZE RAPPORT-ENTRY.  
            MOVE PT-ETOILE TO RAPPORT-ENTRY
            WRITE RAPPORT-ENTRY.
+           INITIALIZE RAPPORT-ENTRY.           
            MOVE PT-INCOH  TO RAPPORT-ENTRY
            WRITE RAPPORT-ENTRY.
+           INITIALIZE RAPPORT-ENTRY.           
            MOVE PT-ETOILE TO RAPPORT-ENTRY
            WRITE RAPPORT-ENTRY.
+         
+           DISPLAY "switch ok"
 
            EXEC SQL 
                DECLARE CRCODE CURSOR FOR
-               SELECT  id, last_name, first_name, email, country, 
+               SELECT country, 
                       country_code
                FROM databank
            END-EXEC.
 
            EXEC SQL 
-               OPEN CRCODE 
+               OPEN CRCODE
            END-EXEC.
 
            DISPLAY "cursor ok".
+           
            PERFORM UNTIL SQLCODE = +100
-
-           EXEC SQL
-               FETCH CRCODE
-               INTO :DK-COUNTRY, :DK-COUNTRY-CODE
-           END-EXEC
-
-           MOVE DK-COUNTRY          TO WS-COUNTRY
-           MOVE DK-COUNTRY-CODE     TO WS-CODE         
-
-           IF WS-COUNTRY = 'France'           THEN
-               MOVE 'FR' TO WS-COUNTRY-CODE
-           ELSE IF WS-COUNTRY = 'Belgium'     THEN
-               MOVE 'BE' TO WS-COUNTRY-CODE
-           ELSE IF WS-COUNTRY = 'Luxembourg'  THEN
-               MOVE 'LU' TO WS-COUNTRY-CODE
-           ELSE IF WS-COUNTRY = 'Switzerland' THEN
-               MOVE 'CH' TO WS-COUNTRY-CODE
-           ELSE
-               MOVE '  ' TO WS-COUNTRY-CODE
-           DISPLAY "switch ok"
-           IF WS-CODE NOT EQUAL TO DK-COUNTRY-CODE THEN
-           EXEC SQL
-               UPDATE databank
-               SET country_code = :WS-COUNTRY-CODE
-               WHERE id = :DK-ID
-           END-EXEC
-           DISPLAY "update ok"
-           MOVE DK-COUNTRY  TO RAPPORT-ENTRY
-           WRITE RAPPORT-ENTRY
-           MOVE PT-ETOILE TO RAPPORT-ENTRY
-           WRITE RAPPORT-ENTRY
-          DISPLAY "write ok"
-           END-IF
-           END-IF
+      
+               EXEC SQL
+                   FETCH CRCODE
+                   INTO :DK-COUNTRY, :DK-COUNTRY-CODE
+               END-EXEC
+               
+               IF SQLCODE = 0 THEN
+               MOVE DK-COUNTRY          TO WS-COUNTRY
+               MOVE DK-COUNTRY-CODE     TO WS-CODE         
+      
+               IF WS-COUNTRY = 'France'           THEN
+                   MOVE 'FR' TO WS-COUNTRY-CODE
+               ELSE IF WS-COUNTRY = 'Belgium'     THEN
+                   MOVE 'BE' TO WS-COUNTRY-CODE
+               ELSE IF WS-COUNTRY = 'Luxembourg'  THEN
+                   MOVE 'LU' TO WS-COUNTRY-CODE
+               ELSE IF WS-COUNTRY = 'Switzerland' THEN
+                   MOVE 'CH' TO WS-COUNTRY-CODE
+               ELSE
+                   MOVE '  ' TO WS-COUNTRY-CODE
+               END-IF    
+               IF WS-CODE NOT EQUAL TO WS-COUNTRY-CODE THEN
+               EXEC SQL
+                   UPDATE databank
+                   SET country_code = :WS-COUNTRY-CODE
+                   WHERE id = :DK-ID
+               END-EXEC
+           
+               DISPLAY "update ok"
+               END-IF
+               END-IF           
            END-PERFORM. 
 
+           EXEC SQL 
+               CLOSE CRCODE
+           END-EXEC.
+
            IF SQLCODE = 0 THEN
+           INITIALIZE RAPPORT-ENTRY           
                MOVE 'La mise à jour à correctement été effectuée.'
                TO RAPPORT-ENTRY
                WRITE RAPPORT-ENTRY
@@ -224,9 +238,10 @@
                PERFORM 1001-ERROR-RTN-START
                    THRU 1001-ERROR-RTN-END
            END-IF.
+
            DISPLAY "part2 ok".
        7020-INCOHERENCE-END.
-           EXIT.
+
 
       ******************************************************************
        7030-MAJUSCULE-START. 
@@ -258,7 +273,7 @@
            END-IF.
            DISPLAY "part3 ok".
        7030-MAJUSCULE-END. 
-           EXIT.
+
 
       ******************************************************************
       *                     ERROR SQL MGMT                             * 

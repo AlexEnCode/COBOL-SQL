@@ -13,6 +13,7 @@
        CONFIGURATION SECTION.
        SPECIAL-NAMES.
            DECIMAL-POINT IS COMMA.
+
       ****************************************************************** 
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.

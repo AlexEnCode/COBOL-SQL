@@ -112,9 +112,9 @@
 
        EXEC SQL INCLUDE SQLCA END-EXEC.
 
+      ******************************************************************
        PROCEDURE DIVISION.
 
-      ******************************************************************
            EXEC SQL
                CONNECT :USERNAME 
                IDENTIFIED BY :PASSWD 

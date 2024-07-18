@@ -26,6 +26,7 @@
            RECORDING MODE IS F.    
 
        01  RAPPORT-ENTRY     PIC X(125).
+
       ******************************************************************
 
        WORKING-STORAGE SECTION.

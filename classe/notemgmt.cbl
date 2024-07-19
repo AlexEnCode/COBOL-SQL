@@ -52,7 +52,6 @@
        01  REC-F-OUTPUT        PIC X(2000).
 
       ******************************************************************
-
        WORKING-STORAGE SECTION.
 
        01 BULLETIN-CONTENT. 
